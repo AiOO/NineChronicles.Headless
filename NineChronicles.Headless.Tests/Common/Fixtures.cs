@@ -55,5 +55,26 @@ namespace NineChronicles.Headless.Tests
             }
             return shopState;
         }
+
+        public static ShardedShopState ShardedWeapon0ShopStateFX()
+        {
+            var shardedWeapon0ShopStateAddress = ShardedShopState.DeriveAddress(ItemSubType.Weapon, "0");
+            var shardedShopState = new ShardedShopState(shardedWeapon0ShopStateAddress);
+
+            for (var index = 0; index < TableSheetsFX.EquipmentItemSheet.OrderedList.Count; index++)
+            {
+                var row = TableSheetsFX.EquipmentItemSheet.OrderedList[index];
+                var equipment = ItemFactory.CreateItemUsable(row, default, 0);
+                if (equipment.ItemSubType != ItemSubType.Weapon)
+                {
+                    continue;
+                }
+                var productId = Guid.Parse("0" + Guid.NewGuid().ToString()[1..]);
+                var shopItem = new ShopItem(UserAddress, AvatarAddress, productId, index * CurrencyFX, equipment);
+                shardedShopState.Register(shopItem);
+            }
+
+            return shardedShopState;
+        }
     }
 }

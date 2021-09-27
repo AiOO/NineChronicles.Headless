@@ -19,7 +19,8 @@ namespace NineChronicles.Headless.Tests.GraphTypes.States.Models
             ItemUsable itemUsable,
             Costume costume,
             Dictionary<string, object> itemUsableDict,
-            Dictionary<string, object> costumeDict
+            Dictionary<string, object> costumeDict,
+            bool isIncludingExpiredBlockIndex
         )
         {
             const string query = @"
@@ -37,35 +38,37 @@ namespace NineChronicles.Headless.Tests.GraphTypes.States.Models
                     itemType
                     itemSubType
                 }
+                expiredBlockIndex
             }";
 
-            var itemId = new Guid("220acb43-095e-46f6-9725-4223c69827e8");
             ShopItem shopItem;
-            if (costume is null)
+            ITradableItem item = costume is null ? itemUsable : costume as ITradableItem;
+            if (isIncludingExpiredBlockIndex)
             {
                 shopItem = new ShopItem(Fixtures.UserAddress, Fixtures.AvatarAddress,
-                    new Guid("d3d9ac06-eb91-4cc4-863a-5b4769ad633e"), 100 * Fixtures.CurrencyFX, itemUsable);
+                    new Guid("d3d9ac06-eb91-4cc4-863a-5b4769ad633e"), 100 * Fixtures.CurrencyFX, 15000, item);
             }
             else
             {
                 shopItem = new ShopItem(Fixtures.UserAddress, Fixtures.AvatarAddress,
-                    new Guid("d3d9ac06-eb91-4cc4-863a-5b4769ad633e"), 100 * Fixtures.CurrencyFX, costume);
+                    new Guid("d3d9ac06-eb91-4cc4-863a-5b4769ad633e"), 100 * Fixtures.CurrencyFX, item);
             }
 
-            var expected = new Dictionary<string, object>
+            var expected = new Dictionary<string, object?>
             {
                 ["sellerAgentAddress"] = "0xfc2a412ea59122B114B672a5518Bc113955Dd2FE",
                 ["sellerAvatarAddress"] = "0x983c3Fbfe8243a0e36D55C6C1aE26A7c8Bb6CBd4",
                 ["price"] = "100 NCG",
                 ["itemUsable"] = itemUsableDict,
                 ["costume"] = costumeDict,
+                ["expiredBlockIndex"] = isIncludingExpiredBlockIndex ? 15000L : (object?)null,
             };
 
             var queryResult = await ExecuteQueryAsync<ShopItemType>(query, source: shopItem);
             var data = (Dictionary<string, object>)((ExecutionNode) queryResult.Data!).ToValue()!;
-            var expectedItemUsable = (Dictionary<string, object>)expected["itemUsable"];
+            var expectedItemUsable = (Dictionary<string, object>)(expected["itemUsable"]!);
             var dataItemUsable = (Dictionary<string, object>)data["itemUsable"];
-            var expectedCostume = (Dictionary<string, object>)expected["costume"];
+            var expectedCostume = (Dictionary<string, object>)(expected["costume"]!);
             var dataCostume = (Dictionary<string, object>)data["costume"];
             Assert.Equal(expected["sellerAgentAddress"], data["sellerAgentAddress"]);
             Assert.Equal(expected["sellerAvatarAddress"], data["sellerAvatarAddress"]);
@@ -98,6 +101,7 @@ namespace NineChronicles.Headless.Tests.GraphTypes.States.Models
                     ["itemSubType"] = ItemSubType.Weapon.ToString().ToUpper(),
                 },
                 null,
+                true,
             },
             new object?[]
             {
@@ -110,6 +114,7 @@ namespace NineChronicles.Headless.Tests.GraphTypes.States.Models
                     ["itemType"] = ItemType.Costume.ToString().ToUpper(),
                     ["itemSubType"] = "FULL_COSTUME",
                 },
+                false,
             },
         };
 

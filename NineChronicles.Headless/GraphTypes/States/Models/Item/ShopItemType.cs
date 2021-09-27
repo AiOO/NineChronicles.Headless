@@ -35,6 +35,11 @@ namespace NineChronicles.Headless.GraphTypes.States.Models.Item
                 description: "Costume information.",
                 resolve: context => context.Source.Costume
             );
+            Field<LongGraphType>(
+                nameof(ShopItem.ExpiredBlockIndex),
+                description: "Expired block index.",
+                resolve: context => context.Source.ExpiredBlockIndex != 0 ? context.Source.ExpiredBlockIndex : (object?)null
+            );
         }
     }
 }
